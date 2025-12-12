@@ -35,13 +35,17 @@ public class SlowedAndReverbed {
         JFormattedTextField outGainField = new JFormattedTextField(doubleFormater);
         JFormattedTextField delayField = new JFormattedTextField(doubleFormater);
         JFormattedTextField decayField = new JFormattedTextField(doubleFormater);
+        speedField.setValue(0.8);
+        inGainField.setValue(0.8);
+        outGainField.setValue(0.7);
+        delayField.setValue(100);
+        decayField.setValue(0.5);
         JLabel pathLabel = new JLabel("No file selected");
         JLabel speedLabel = new JLabel("Speed from 0.5 - 2.0");
         JLabel inGainLabel = new JLabel("In-Gain from 0.0 - 1.0");
         JLabel outGainLabel = new JLabel("Out-Gain from 0.0 - 1.0");
         JLabel delayLabel = new JLabel("delay from 0 - 2000");
         JLabel decayLabel = new JLabel("decay from 0.0 - 1.0");
-        JLabel reverbLabel = new JLabel("Reverb: 0%");
 
 
         newButton.addActionListener(e -> {
@@ -49,6 +53,21 @@ public class SlowedAndReverbed {
             String pathLabelText = new java.io.File(filePath).getName(); //Object has no references after, garbage collector kills it.
             pathLabel.setText(pathLabelText);
             newButton.setText("Select new file");
+        });
+
+        saveButton.addActionListener(e -> {
+            double speed = ((Number) speedField.getValue()).doubleValue();
+            double in = ((Number) inGainField.getValue()).doubleValue();
+            double out = ((Number) outGainField.getValue()).doubleValue();
+            double delay = ((Number) delayField.getValue()).doubleValue();
+            double decay = ((Number) decayField.getValue()).doubleValue();
+            double[] reverbList = {in,out,delay,decay};
+            try {
+            setFile(frame, filePath, reverbList, speed);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return;
+            }
         });
 
 
@@ -75,7 +94,6 @@ public class SlowedAndReverbed {
 
         panelMid.setLayout(new BoxLayout(panelMid, BoxLayout.Y_AXIS));
         panelMid.add(pathLabel);
-        panelMid.add(reverbLabel);
         panelMid.add(panelMidButtons);
 
         frame.add(panel, BorderLayout.NORTH);
@@ -92,18 +110,6 @@ public class SlowedAndReverbed {
         File file = fileChooser.getSelectedFile();
         return file.getPath();
         
-    }
-
-    public static double[] getReverbValues(int percentageValue){
-        int delay = 120;
-        double decay = 0.5, wet = percentageValue/100, dry = 1 - wet;
-        double[] reverbValues = {dry, wet, delay, decay};
-        return reverbValues;
-    }
-
-    public static double getSpeedValue(int percentageValue){
-        double speed = percentageValue/100.0;
-        return speed;
     }
 
     public static String getCodec(String inputPath){
@@ -137,6 +143,7 @@ public class SlowedAndReverbed {
         "-i", filePath,
         "-filter:a", filterCmd,
         "-c:a", getCodec(pathSelected),
+        "-b:a", "320k", 
         pathSelected
         };
 
