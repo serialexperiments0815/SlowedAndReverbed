@@ -1,24 +1,46 @@
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Locale;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.NumberFormatter;
 
 public class SlowedAndReverbed {
     
     private String filePath;
     public void main(String[] args){
+
+        NumberFormat doubleFormat = NumberFormat.getNumberInstance(Locale.US);
+        doubleFormat.setGroupingUsed(false);
+
+        NumberFormatter doubleFormater = new NumberFormatter(doubleFormat);
+        doubleFormater.setValueClass(Double.class);
+        doubleFormater.setAllowsInvalid(true);
+        doubleFormater.setCommitsOnValidEdit(true);
+
+
         JFrame frame = new JFrame("SlowedAndReverbed");
         JPanel panel = new JPanel();
         JPanel panelMid = new JPanel();
+        JPanel panelMidButtons = new JPanel();
         JButton newButton = new JButton("Select file");
         JButton saveButton = new JButton("Save file");
-        JSlider sliderSpeed = new JSlider(50, 200, 100);
-        JSlider sliderReverb = new JSlider(0, 100, 0);
+        JFormattedTextField speedField = new JFormattedTextField(doubleFormater);
+        JFormattedTextField inGainField = new JFormattedTextField(doubleFormater);
+        JFormattedTextField outGainField = new JFormattedTextField(doubleFormater);
+        JFormattedTextField delayField = new JFormattedTextField(doubleFormater);
+        JFormattedTextField decayField = new JFormattedTextField(doubleFormater);
         JLabel pathLabel = new JLabel("No file selected");
-        JLabel speedLabel = new JLabel("Speed: 100%");
+        JLabel speedLabel = new JLabel("Speed from 0.5 - 2.0");
+        JLabel inGainLabel = new JLabel("In-Gain from 0.0 - 1.0");
+        JLabel outGainLabel = new JLabel("Out-Gain from 0.0 - 1.0");
+        JLabel delayLabel = new JLabel("delay from 0 - 2000");
+        JLabel decayLabel = new JLabel("decay from 0.0 - 1.0");
         JLabel reverbLabel = new JLabel("Reverb: 0%");
 
 
@@ -29,42 +51,32 @@ public class SlowedAndReverbed {
             newButton.setText("Select new file");
         });
 
-        saveButton.addActionListener(e -> {
-            try {
-            setFile(frame, filePath, getReverbValues(sliderReverb.getValue()), getSpeedValue(sliderSpeed.getValue()));
-            } catch (IOException | InterruptedException ex){
-                ex.printStackTrace();
-            }
-        });
-
-        sliderSpeed.addChangeListener(e -> {
-            String valueSpeed = String.valueOf(sliderSpeed.getValue());
-            speedLabel.setText("Speed: " + valueSpeed + "%");
-        });
-        
-        sliderReverb.addChangeListener(e -> {
-            String valueReverb = String.valueOf(sliderReverb.getValue());
-            reverbLabel.setText("Reverb: " + valueReverb + "%");
-        });
-
 
         frame.setSize(400,600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
         frame.setLayout(new BorderLayout());
 
-        sliderSpeed.setPaintTicks(true);
-        sliderSpeed.setPaintLabels(true);
 
         panel.add(newButton);
         panel.add(saveButton);
-        
+
+        panelMidButtons.setLayout(new GridLayout(0, 1, 5, 5));
+        panelMidButtons.add(speedLabel);
+        panelMidButtons.add(speedField);
+        panelMidButtons.add(inGainLabel);
+        panelMidButtons.add(inGainField);
+        panelMidButtons.add(outGainLabel);
+        panelMidButtons.add(outGainField);
+        panelMidButtons.add(delayLabel);
+        panelMidButtons.add(delayField);
+        panelMidButtons.add(decayLabel);
+        panelMidButtons.add(decayField);
+
         panelMid.setLayout(new BoxLayout(panelMid, BoxLayout.Y_AXIS));
         panelMid.add(pathLabel);
-        panelMid.add(sliderSpeed);
-        panelMid.add(speedLabel);
-        panelMid.add(sliderReverb);
         panelMid.add(reverbLabel);
+        panelMid.add(panelMidButtons);
 
         frame.add(panel, BorderLayout.NORTH);
         frame.add(panelMid, BorderLayout.CENTER);
