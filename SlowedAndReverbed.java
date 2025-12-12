@@ -1,28 +1,40 @@
 import java.awt.BorderLayout;
 import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SlowedAndReverbed {
     
-    public static void main(String[] args){
+    private String filePath;
+    public void main(String[] args){
         JFrame frame = new JFrame("SlowedAndReverbed");
         JPanel panel = new JPanel();
         JPanel panelMid = new JPanel();
         JButton newButton = new JButton("Select file");
         JButton saveButton = new JButton("Save file");
-        JSlider sliderSpeed = new JSlider(0, 200, 100);
+        JSlider sliderSpeed = new JSlider(50, 200, 100);
         JSlider sliderReverb = new JSlider(0, 100, 0);
         JLabel pathLabel = new JLabel("No file selected");
         JLabel speedLabel = new JLabel("Speed: 100%");
         JLabel reverbLabel = new JLabel("Reverb: 0%");
 
+
         newButton.addActionListener(e -> {
-            String filePath = getFile(frame);
+            filePath = getFile(frame);
             String pathLabelText = new java.io.File(filePath).getName(); //Object has no references after, garbage collector kills it.
             pathLabel.setText(pathLabelText);
             newButton.setText("Select new file");
+        });
+
+        saveButton.addActionListener(e -> {
+            try {
+            setFile(frame, filePath, getReverbValues(sliderReverb.getValue()), getSpeedValue(sliderSpeed.getValue()));
+            } catch (IOException | InterruptedException ex){
+                ex.printStackTrace();
+            }
         });
 
         sliderSpeed.addChangeListener(e -> {
@@ -46,12 +58,14 @@ public class SlowedAndReverbed {
 
         panel.add(newButton);
         panel.add(saveButton);
+        
         panelMid.setLayout(new BoxLayout(panelMid, BoxLayout.Y_AXIS));
         panelMid.add(pathLabel);
         panelMid.add(sliderSpeed);
         panelMid.add(speedLabel);
         panelMid.add(sliderReverb);
         panelMid.add(reverbLabel);
+
         frame.add(panel, BorderLayout.NORTH);
         frame.add(panelMid, BorderLayout.CENTER);
     }
@@ -67,7 +81,56 @@ public class SlowedAndReverbed {
         return file.getPath();
         
     }
-    
-   
+
+    public static double[] getReverbValues(int percentageValue){
+        int delay = 120;
+        double decay = 0.5, wet = percentageValue/100, dry = 1 - wet;
+        double[] reverbValues = {dry, wet, delay, decay};
+        return reverbValues;
+    }
+
+    public static double getSpeedValue(int percentageValue){
+        double speed = percentageValue/100.0;
+        return speed;
+    }
+
+    public static String getCodec(String inputPath){
+        
+        String codec;
+        if (inputPath.endsWith(".wav")) codec = "pcm_s16le";
+        else if (inputPath.endsWith(".mp3")) codec = "libmp3lame";
+        else if (inputPath.endsWith(".m4a") || inputPath.endsWith(".aac")) codec = "aac";
+        else if (inputPath.endsWith(".flac")) codec = "flac";
+        else if (inputPath.endsWith(".ogg")) codec = "libvorbis";
+        else if (inputPath.endsWith(".opus")) codec = "libopus";
+        else if (inputPath.endsWith(".alac")) codec = "alac";
+        else if (inputPath.endsWith(".amr")) codec = "libopencore_amrnb";
+        else if (inputPath.endsWith(".wma")) codec = "wmav2";
+        else codec = "aac"; // fallback
+
+        return codec;
+    }
+
+    public static void setFile(JFrame frame, String filePath, double[] reverbValues, double speedValue) throws IOException, InterruptedException{
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setSelectedFile(new File("output.wav"));
+        FileFilter filter = new FileNameExtensionFilter("WAV files", "wav");
+        fileChooser.setFileFilter(filter);
+        fileChooser.showSaveDialog(frame);
+        File selectedChooser = fileChooser.getSelectedFile();
+        String pathSelected = selectedChooser.getAbsolutePath();
+        String filterCmd = "atempo=" + speedValue + ",aecho=" + reverbValues[0] + ":" + reverbValues[1] + ":" + reverbValues[2] + ":" + reverbValues[3];
+        
+        String[] cmd = {"ffmpeg",
+        "-i", filePath,
+        "-filter:a", filterCmd,
+        "-c:a", getCodec(pathSelected),
+        pathSelected
+        };
+
+        System.out.println(Arrays.toString(cmd));
+
+        new ProcessBuilder(cmd).inheritIO().start().waitFor();
+    }
 
    }
